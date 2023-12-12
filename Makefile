@@ -12,6 +12,7 @@ usage:
 docker-build:
 	@echo "Building the docker image: $(IMAGE_NAME):$(TAG)"
 	docker build -t $(IMAGE_REPO)/$(IMAGE_NAME):$(TAG) .
+	docker tag $(IMAGE_REPO)/$(IMAGE_NAME):$(TAG) $(IMAGE_REPO)/$(IMAGE_NAME):latest
 
 
 docker-run:
