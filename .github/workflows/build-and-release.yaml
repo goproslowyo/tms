@@ -1,37 +1,37 @@
-name: Build and Release
+name: Build & Release
 
 on:
   push:
     branches:
-      - "*" # Trigger on pushes to any branch
+      - "main" # Trigger on pushes to main
     tags:
       - "v*" # Trigger on tags that start with 'v'
 
-permissions:
-  contents: write
+permissions: write-all
 
 jobs:
-  build:
+  release:
+    name: Build & Release
+    if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout code
         uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11 # pin to v4.1.1
 
-      - name: Set up Go
-        uses: actions/setup-go@0c52d547c9bc32b1aa3301fd7a9cb496313a4491 # pin to v5.0.0
-        with:
-          go-version: 1.21
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@68827325e0b33c7199eb31dd4e31fbe9023e06e3 # pin to v3.0.0
-
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@f95db51fddba0c2d1ec667646a06c2ce06100226 # pin to v3.0.0
 
-      - name: Run make docker-build
+      - name: Docker login
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Run "make docker-build"
         run: make docker-build
 
+<<<<<<< HEAD
+      - name: Run "make docker-deploy"
+        run: make docker-deploy
+=======
   release:
     runs-on: ubuntu-latest
 
@@ -64,8 +64,9 @@ jobs:
         uses: goreleaser/goreleaser-action@7ec5c2b0c6cdda6e8bbb49444bc797dd33d74dd8 # pin to v5.0.0
         with:
           version: latest
-          args: release --rm-dist
+          args: release --clean
         env:
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE: ${{ env.IMAGE_NAME }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+>>>>>>> 1741560 (Convert from deprecated flag)

@@ -3,11 +3,13 @@ before:
     - go mod tidy
 
 env:
-  - GO111MODULE=on
   - CGO_ENABLED=0
 
 builds:
   - binary: tms
+    env:
+      - CGO_ENABLED=0
+    dir: src
     goos:
       - linux
     goarch:
