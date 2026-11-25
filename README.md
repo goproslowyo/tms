@@ -7,10 +7,12 @@ This is a simple HTTP service that listens on `MDS_LISTEN` (defaults to `127.0.0
 There are two environmental variables that can be set to change the behavior of the service.
 
 * `MDS_CONFIG_DIR` - The directory to look for YAML files in. Defaults to `./configs`.
-* `MDS_LISTEN` - The address and port to listen on. Defaults to `127.0.01:8088`.
+* `MDS_LISTEN` - The address and port to listen on. Defaults to `127.0.0.1:8088`.
 * `MDS_LOG_LEVEL` - The log level to use. Defaults to `info`.
 
-The service will look for a YAML file with the name of the MAC address in the `MDS_CONFIG_DIR` directory. For example, if the MAC address is `6c:4b:90:26:e4:4d` then the service will look for a file named `6c4b9026e44d.yaml` in the `MDS_CONFIG_DIR` directory. If the file is found then the contents of the file will be returned. If the file is not found then a 404 not found will be returned.
+The service will look for a YAML file with the name of the MAC address in the `MDS_CONFIG_DIR` directory. For example, if the MAC address is `6c:4b:90:26:e4:4d` then the service will look for a file named `6c4b9026e44d.yaml` in the `MDS_CONFIG_DIR` directory. If the file is found then its contents are returned exactly as stored (Talos configs are multi-document YAML, so the file is never parsed or rewritten). If the file is not found then a 404 not found will be returned. The `mac` parameter accepts `aa:bb:cc:dd:ee:ff`, `aa-bb-cc-dd-ee-ff` or `aabbccddeeff` in any case; anything else gets a 400.
+
+Point Talos at the service with the kernel argument `talos.config=http://<host>:8088/talos/config?mac=${mac}`.
 
 ## Usage
 
