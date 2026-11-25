@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1-labs
 
-FROM cgr.dev/chainguard/go:latest-dev as build
+FROM cgr.dev/chainguard/go:latest-dev AS build
 WORKDIR /work
 COPY src/go.* src/*.go ./
 # COPY  ./

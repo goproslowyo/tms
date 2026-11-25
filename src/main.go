@@ -2,9 +2,9 @@ package main
 
 import (
 	"net/http"
+	"time"
 
 	log "github.com/sirupsen/logrus"
-	"golang.org/x/net/http2"
 )
 
 // Global variables
@@ -31,17 +31,11 @@ func main() {
 	log.Debugf("Config directory: %s", CONFIG_DIR)
 
 	log.Println("Starting Talos Metadata Config Service")
-	http.HandleFunc("/talos/config", metadataHandler)
-
-	// Enable HTTP/2 support
-	http2.VerboseLogs = true // Enable verbose logs for debugging
-	// Create an HTTP/2 enabled server
 	server := &http.Server{
-		Addr:    listen,
-		Handler: http.HandlerFunc(metadataHandler),
+		Addr:              listen,
+		Handler:           http.HandlerFunc(metadataHandler),
+		ReadHeaderTimeout: 10 * time.Second,
 	}
-	// Enable HTTP/2 support on the server
-	http2.ConfigureServer(server, nil)
 	log.Printf("Listening on %s", listen)
-	server.ListenAndServe()
+	log.Fatal(server.ListenAndServe())
 }

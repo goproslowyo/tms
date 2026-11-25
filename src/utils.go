@@ -1,13 +1,16 @@
 package main
 
 import (
+	"fmt"
 	"net/http"
 	"os"
+	"regexp"
 	"strings"
 
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 )
+
+var macRe = regexp.MustCompile(`^[0-9a-f]{12}$`)
 
 func getEnv(key string, fallback string) string {
 	value, exists := os.LookupEnv(key)
@@ -17,30 +20,16 @@ func getEnv(key string, fallback string) string {
 	return fallback
 }
 
+// getMacFromRequest returns the MAC from the "mac" query parameter as 12
+// lowercase hex digits. Anything else is rejected, which also rules out
+// path traversal.
 func getMacFromRequest(r *http.Request) (string, error) {
-	// Get url parameters
-	mac := strings.ToLower(r.URL.Query().Get("mac"))
-	log.Debugf("Raw MAC: %s", mac)
-	// Sanitize input to prevent directory traversal \/.. etc.
-	mac = strings.Replace(mac, "/", "", -1)
-	mac = strings.Replace(mac, "\\", "", -1)
-	mac = strings.Replace(mac, "..", "", -1)
-	mac = strings.Replace(mac, ":", "", -1)
+	raw := r.URL.Query().Get("mac")
+	log.Debugf("Raw MAC: %s", raw)
+	mac := strings.ToLower(strings.NewReplacer(":", "", "-", "").Replace(raw))
+	if !macRe.MatchString(mac) {
+		return "", fmt.Errorf("invalid mac %q", raw)
+	}
 	log.Debugf("Sanitized MAC %s", mac)
 	return mac, nil
-}
-
-func loadConfig(filePath string) (Config, error) {
-	data, err := os.ReadFile(filePath)
-	if err != nil {
-		return Config{}, err
-	}
-
-	var config Config
-	err = yaml.Unmarshal(data, &config)
-	if err != nil {
-		return Config{}, err
-	}
-
-	return config, nil
 }

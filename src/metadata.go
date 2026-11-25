@@ -1,52 +1,52 @@
 package main
 
 import (
-	"fmt"
+	"errors"
+	"io/fs"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	log "github.com/sirupsen/logrus"
-	"gopkg.in/yaml.v2"
 )
 
+// metadataHandler serves the machine config for the MAC in the request
+// byte-for-byte. Talos configs are multi-document YAML whose schema changes
+// between releases, so the file is never parsed or re-encoded here.
 func metadataHandler(w http.ResponseWriter, r *http.Request) {
-	// Parse MAC from request
-	mac, err := getMacFromRequest(r)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		log.Errorf("Error getting MAC from request: %s. Request: %+v", err, r)
+	if r.URL.Path != "/talos/config" {
+		http.NotFound(w, r)
+		return
+	}
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		w.Header().Set("Allow", "GET, HEAD")
+		http.Error(w, "Method Not Allowed", http.StatusMethodNotAllowed)
 		return
 	}
 
-	// Load configuration from YAML file
-	configPath := fmt.Sprintf("%s/%s.yaml", CONFIG_DIR, mac)
-	log.Printf("Attempting to load from %s", configPath)
-	config, err := loadConfig(configPath)
+	mac, err := getMacFromRequest(r)
+	if err != nil {
+		http.Error(w, "Bad Request", http.StatusBadRequest)
+		log.Errorf("Invalid MAC in request from %s: %s", r.RemoteAddr, err)
+		return
+	}
 
-	// If the file doesn't exist, return a 404
-	if os.IsNotExist(err) {
+	configPath := filepath.Join(CONFIG_DIR, mac+".yaml")
+	log.Printf("Attempting to load from %s", configPath)
+	data, err := os.ReadFile(configPath)
+	if errors.Is(err, fs.ErrNotExist) {
 		http.Error(w, "Not Found", http.StatusNotFound)
 		log.Errorf("Config file not found: %s", err)
 		return
 	}
-
-	// Handle other errors
 	if err != nil {
 		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
 		log.Errorf("Error loading config: %s", err)
 		return
 	}
 
-	// Return the config as YAML
 	w.Header().Set("Content-Type", "application/x-yaml")
-	// Write the YAML to the response
-	out, err := yaml.Marshal(config)
-	if err != nil {
-		http.Error(w, "Internal Server Error", http.StatusInternalServerError)
-		log.Errorf("Error marshalling config: %s", err)
-		return
+	if _, err := w.Write(data); err != nil {
+		log.Errorf("Error writing response: %s", err)
 	}
-	w.Write(out)
-	// Close the connection
-	w.(http.Flusher).Flush()
 }
