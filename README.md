@@ -2,7 +2,7 @@
 
 A tiny HTTP server that hands each [Talos Linux](https://www.talos.dev/) machine its own machine config, chosen by MAC address.
 
-A Talos machine booted with the `talos.config=` kernel argument downloads its config from that URL. Talos fills in `${mac}` with the MAC address of the interface it boots from. tms looks for a file named after that MAC address and returns it **exactly as stored**, so any Talos version and any config shape works, including multi-document configs.
+A Talos machine booted with the `talos.config=` kernel argument downloads its config from that URL. Talos fills in `${mac}` with the MAC address of the machine's first network interface, as `aa:bb:cc:dd:ee:ff`. tms looks for a file named after that MAC address and returns it **exactly as stored**, so any Talos version and any config shape works, including multi-document configs.
 
 ```text
  Talos node (boot)                         tms                          configs/
@@ -163,7 +163,7 @@ Ways to add it:
   kernel https://pxe.factory.talos.dev/.../vmlinuz-amd64 talos.platform=metal talos.config=http://10.0.0.5:8088/talos/config?mac=$${mac}
   ```
 
-When a node boots, it fetches its file, installs to the disk its config selects (`UnattendedInstallConfig` in current Talos, defaulting to `/dev/sda`), and joins the cluster.
+If there's no file for a node yet, Talos gets a 404 and keeps retrying with backoff, so you can add the file while it waits. When a node boots, it fetches its file, installs to the disk its config selects (`UnattendedInstallConfig` in current Talos, defaulting to `/dev/sda`), and joins the cluster.
 
 ## Make targets
 
