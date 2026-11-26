@@ -23,7 +23,8 @@ docker-run:
 		--detach \
 		--env MDS_LISTEN=0.0.0.0:8088 \
 		--env MDS_LOG_LEVEL=debug \
-		--env MDS_CONFIG_DIR=./configs \
+		--env MDS_CONFIG_DIR=/configs \
+		--volume "$(CURDIR)/configs:/configs:ro" \
 		--publish 8088:8088 $(IMAGE_REPO)/$(IMAGE_NAME):$(TAG)
 
 
